@@ -1,6 +1,7 @@
 package edu.njit.app;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.LongWritable;
@@ -11,7 +12,9 @@ import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
@@ -19,6 +22,7 @@ import java.util.Map;
 public class Top3Airports {
 
     private static final Integer ORIGIN_INDEX = 16, DEST_INDEX = 17, TAXI_IN_INDEX = 19, TAXI_OUT_INDEX = 20;
+    private static Map<String, String> airportCodeMap = new HashMap<>();
 
     public static class AirportMapper extends Mapper<LongWritable, Text, Text, Text> {
 
@@ -80,13 +84,15 @@ public class Top3Airports {
 
             int counter = 0;
             for(Map.Entry<Double, Text> airport : airportByLongestTaxiTime.entrySet()) {
-                context.write(airport.getValue(), new DoubleWritable(airport.getKey()));
+                String key = airport.getValue().toString();
+                context.write(new Text(airportCodeMap.get(key)), new DoubleWritable(airport.getKey()));
                 counter++;
                 if(counter == 3) break;
             }
             counter = 0;
             for(Map.Entry<Double, Text> airport : airportByShortestTaxiTime.entrySet()) {
-                context.write(airport.getValue(), new DoubleWritable(airport.getKey()));
+                String key = airport.getValue().toString();
+                context.write(new Text(airportCodeMap.get(key)), new DoubleWritable(airport.getKey()));
                 counter++;
                 if(counter == 3) break;
             }
@@ -95,10 +101,12 @@ public class Top3Airports {
 
     public static void main(String[] args) throws IOException, ClassNotFoundException, InterruptedException {
         Configuration configuration = new Configuration();
-        if(args.length < 2) {
-            System.out.println("Please provide an input file and an output directory");
+        if(args.length < 3) {
+            System.out.println("Please provide an input file, an output directory and airport code file");
             System.exit(-1);
         }
+
+        loadAirportCodeMap(args[2], configuration);
 
         Job job = Job.getInstance(configuration, "Top 3 Airports");
         job.setJarByClass(Top3Airports.class);
@@ -116,5 +124,21 @@ public class Top3Airports {
         FileOutputFormat.setOutputPath(job, new Path(args[1]));
 
         System.exit(job.waitForCompletion(true) ? 0 : 1);
+    }
+
+    private static void loadAirportCodeMap(String airportFilePath, Configuration configuration) throws IOException {
+        String line;
+        Path path = new Path(airportFilePath);
+        FileSystem fileSystem = FileSystem.get(configuration);
+        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(fileSystem.open(path)));
+        while((line = bufferedReader.readLine())!= null) {
+            String[] data = line.split(",");
+            String airportCode = data[0];
+            String airportName = data[1];
+            String city = data[2];
+            String state = data[3];
+            String country = data[4];
+            airportCodeMap.put(airportCode, String.format("%s- %s, %s, %s", airportName, city, state, country));
+        }
     }
 }
