@@ -46,7 +46,7 @@ public class Top3Airports {
 
     public static class AirportReducer extends Reducer<Text, Text, Text, DoubleWritable> {
 
-        Map<Double, Text> result;
+        Map<Text, Double> result;
 
         @Override
         protected void setup(Context context) {
@@ -64,35 +64,35 @@ public class Top3Airports {
                 totalTaxiTime += taxiTime;
                 totalCount += count;
             }
-            result.put(((double) totalTaxiTime / (double) totalCount), key);
+            result.put(key, ((double) totalTaxiTime / (double) totalCount));
         }
 
         @Override
         protected void cleanup(Context context) throws IOException, InterruptedException {
-            Map<Double, Text> airportByShortestTaxiTime = new HashMap<>();
-            Map<Double, Text> airportByLongestTaxiTime = new HashMap<>();
+            Map<Text, Double> airportByShortestTaxiTime = new HashMap<>();
+            Map<Text, Double> airportByLongestTaxiTime = new HashMap<>();
 
             result.entrySet()
                     .stream()
-                    .sorted(Map.Entry.comparingByKey())
+                    .sorted(Map.Entry.comparingByValue())
                     .forEachOrdered(item -> airportByShortestTaxiTime.put(item.getKey(), item.getValue()));
 
             result.entrySet()
                     .stream()
-                    .sorted(Map.Entry.comparingByKey(Comparator.reverseOrder()))
+                    .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
                     .forEachOrdered(item -> airportByLongestTaxiTime.put(item.getKey(), item.getValue()));
 
             int counter = 0;
-            for(Map.Entry<Double, Text> airport : airportByLongestTaxiTime.entrySet()) {
-                String key = airport.getValue().toString();
-                context.write(new Text(airportCodeMap.get(key)), new DoubleWritable(airport.getKey()));
+            for(Map.Entry<Text, Double> airport : airportByLongestTaxiTime.entrySet()) {
+                String key = airport.getKey().toString();
+                context.write(new Text(airportCodeMap.get(key)), new DoubleWritable(airport.getValue()));
                 counter++;
                 if(counter == 3) break;
             }
             counter = 0;
-            for(Map.Entry<Double, Text> airport : airportByShortestTaxiTime.entrySet()) {
-                String key = airport.getValue().toString();
-                context.write(new Text(airportCodeMap.get(key)), new DoubleWritable(airport.getKey()));
+            for(Map.Entry<Text, Double> airport : airportByShortestTaxiTime.entrySet()) {
+                String key = airport.getKey().toString();
+                context.write(new Text(airportCodeMap.get(key)), new DoubleWritable(airport.getValue()));
                 counter++;
                 if(counter == 3) break;
             }
