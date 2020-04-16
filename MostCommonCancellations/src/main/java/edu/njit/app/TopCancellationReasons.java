@@ -68,13 +68,13 @@ public class TopCancellationReasons {
 
         @Override
         protected void cleanup(Context context) throws IOException, InterruptedException {
-            Map<String, Long> result = resultMap.entrySet()
+            Map<String, Long> result = new HashMap<>();
+            
+            resultMap.entrySet()
                     .stream()
-                    .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
-                    .collect(Collectors.toMap(Map.Entry::getKey,
-                            Map.Entry::getValue,
-                            (item1, item2) -> item1,
-                            LinkedHashMap::new));
+                    .sorted(Map.Entry.comparingByValue())
+                    .forEachOrdered(item -> result.put(item.getKey(), item.getValue()));
+
             for(Map.Entry<String, Long> entry : result.entrySet()) {
                 Text outputKey = new Text(entry.getKey());
                 LongWritable outputValue = new LongWritable(entry.getValue());
