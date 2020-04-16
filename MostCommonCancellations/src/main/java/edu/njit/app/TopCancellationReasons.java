@@ -12,9 +12,7 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class TopCancellationReasons {
 
@@ -38,12 +36,14 @@ public class TopCancellationReasons {
         @Override
         protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
             String[] rawData = value.toString().split(",");
-            String cancellationCode = rawData[CANCELLATION_CODE_INDEX].trim();
-            LongWritable one = new LongWritable(1);
-            if(cancellationCode.length() > 0) {
-                CancellationCodes code = CancellationCodes.valueOf(cancellationCode);
-                Text outputKey = new Text(cancellationReason[code.ordinal()]);
-                context.write(outputKey, one);
+            if(!rawData[0].equalsIgnoreCase("Year")) {
+                String cancellationCode = rawData[CANCELLATION_CODE_INDEX].trim();
+                LongWritable one = new LongWritable(1);
+                if(cancellationCode.length() > 0) {
+                    CancellationCodes code = CancellationCodes.valueOf(cancellationCode);
+                    Text outputKey = new Text(cancellationReason[code.ordinal()]);
+                    context.write(outputKey, one);
+                }
             }
         }
     }
@@ -69,7 +69,7 @@ public class TopCancellationReasons {
         @Override
         protected void cleanup(Context context) throws IOException, InterruptedException {
             Map<String, Long> result = new HashMap<>();
-            
+
             resultMap.entrySet()
                     .stream()
                     .sorted(Map.Entry.comparingByValue())
