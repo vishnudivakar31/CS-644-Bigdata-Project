@@ -11,8 +11,11 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
 import java.io.IOException;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class TopCancellationReasons {
 
@@ -36,14 +39,18 @@ public class TopCancellationReasons {
         @Override
         protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
             String[] rawData = value.toString().split(",");
-            if(!rawData[0].equalsIgnoreCase("Year")) {
-                String cancellationCode = rawData[CANCELLATION_CODE_INDEX].trim();
-                LongWritable one = new LongWritable(1);
-                if(cancellationCode.length() > 0) {
-                    CancellationCodes code = CancellationCodes.valueOf(cancellationCode);
-                    Text outputKey = new Text(cancellationReason[code.ordinal()]);
-                    context.write(outputKey, one);
+            try {
+                if(!rawData[0].equalsIgnoreCase("Year")) {
+                    String cancellationCode = rawData[CANCELLATION_CODE_INDEX].trim();
+                    LongWritable one = new LongWritable(1);
+                    if(cancellationCode.length() > 0) {
+                        CancellationCodes code = CancellationCodes.valueOf(cancellationCode);
+                        Text outputKey = new Text(cancellationReason[code.ordinal()]);
+                        context.write(outputKey, one);
+                    }
                 }
+            } catch (Exception e) {
+                System.out.println(e.getMessage());
             }
         }
     }
@@ -68,12 +75,13 @@ public class TopCancellationReasons {
 
         @Override
         protected void cleanup(Context context) throws IOException, InterruptedException {
-            Map<String, Long> result = new HashMap<>();
+            Map<String, Long> result;
 
-            resultMap.entrySet()
+            result = resultMap.entrySet()
                     .stream()
-                    .sorted(Map.Entry.comparingByValue())
-                    .forEachOrdered(item -> result.put(item.getKey(), item.getValue()));
+                    .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
+                            (v1, v2) -> v1, LinkedHashMap::new));
 
             for(Map.Entry<String, Long> entry : result.entrySet()) {
                 Text outputKey = new Text(entry.getKey());
@@ -101,6 +109,7 @@ public class TopCancellationReasons {
         job.setOutputKeyClass(Text.class);
         job.setOutputValueClass(LongWritable.class);
 
+        FileInputFormat.setInputDirRecursive(job, true);
         FileInputFormat.addInputPath(job, new Path(args[0]));
         FileOutputFormat.setOutputPath(job, new Path(args[1]));
 
