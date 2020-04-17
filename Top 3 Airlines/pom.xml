@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>edu.njit</groupId>
-    <artifactId>Top 3 Airports with Longest and Shortest Average Taxi Time</artifactId>
+    <artifactId>Top3AirportswithLongestandShortestAverageTaxiTime</artifactId>
     <version>1.0</version>
     <packaging>jar</packaging>
     <build>
