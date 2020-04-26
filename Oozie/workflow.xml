@@ -1,0 +1,65 @@
+<workflow-app
+	xmlns="uri:oozie:workflow:1.0" name="map-reduce-wf">
+	<start to="mr-node"/>
+	<action name="mr-node">
+		<map-reduce>
+			<resource-manager>${resourceManager}</resource-manager>
+			<name-node>${nameNode}</name-node>
+			<prepare>
+				<delete path="/user/hadoop/${projectRoot}/output-data/${topAirportTaxiOutput}"/>
+			</prepare>
+			<configuration>
+				<property>
+					<name>mapred.reducer.new-api</name>
+					<value>true</value>
+				</property>
+				<property>
+					<name>mapred.mapper.new-api</name>
+					<value>true</value>
+				</property>
+				<property>
+					<name>mapred.job.queue.name</name>
+					<value>${queueName}</value>
+				</property>
+				<property>
+					<name>mapreduce.map.class</name>
+					<value>AirportTaxiMapper</value>
+				</property>
+				<property>
+					<name>mapreduce.reduce.class</name>
+					<value>AirportTaxiReducer</value>
+				</property>
+				<property>
+					<name>mapred.mapoutput.key.class</name>
+					<value>org.apache.hadoop.io.Text</value>
+				</property>
+				<property>
+					<name>mapred.mapoutput.value.class</name>
+					<value>org.apache.hadoop.io.IntWritable</value>
+				</property>
+				<property>
+					<name>mapred.output.key.class</name>
+					<value>org.apache.hadoop.io.Text</value>
+				</property>
+				<property>
+					<name>mapred.output.value.class</name>
+					<value>org.apache.hadoop.io.Text</value>
+				</property>
+				<property>
+					<name>mapred.input.dir</name>
+					<value>/user/hadoop/${projectRoot}/input-data</value>
+				</property>
+				<property>
+					<name>mapred.output.dir</name>
+					<value>/user/hadoop/${projectRoot}/output-data/${topAirportTaxiOutput}</value>
+				</property>
+			</configuration>
+		</map-reduce>
+		<ok to="end"/>
+		<error to="fail"/>
+	</action>
+	<kill name="fail">
+		<message>Map/Reduce failed, error message[${wf:errorMessage(wf:lastErrorNode())}]</message>
+	</kill>
+	<end name="end"/>
+</workflow-app>
