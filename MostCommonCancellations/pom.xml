@@ -28,7 +28,7 @@
                     </descriptorRefs>
                     <archive>
                         <manifest>
-                            <mainClass>edu.njit.app.TopCancellationReasons</mainClass>
+                            <mainClass>TopCancellationReasons</mainClass>
                         </manifest>
                     </archive>
 
