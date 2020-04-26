@@ -1,6 +1,65 @@
 <workflow-app
 	xmlns="uri:oozie:workflow:1.0" name="map-reduce-wf">
-	<start to="top_airports_based_on_taxi_time"/>
+	<start to="top_airlines_based_on_schedule"/>
+
+	<action name="top_airlines_based_on_schedule">
+		<map-reduce>
+			<resource-manager>${resourceManager}</resource-manager>
+			<name-node>${nameNode}</name-node>
+			<prepare>
+				<delete path="/user/${user}/${projectRoot}/output-data/${topAirlinesByScheduleOutput}"/>
+			</prepare>
+			<configuration>
+				<property>
+					<name>mapred.reducer.new-api</name>
+					<value>true</value>
+				</property>
+				<property>
+					<name>mapred.mapper.new-api</name>
+					<value>true</value>
+				</property>
+				<property>
+					<name>mapred.job.queue.name</name>
+					<value>${queueName}</value>
+				</property>
+				<property>
+					<name>mapreduce.map.class</name>
+					<value>ProbabilityMapper</value>
+				</property>
+				<property>
+					<name>mapreduce.reduce.class</name>
+					<value>ProbabilityReducer</value>
+				</property>
+				<property>
+					<name>mapred.mapoutput.key.class</name>
+					<value>org.apache.hadoop.io.Text</value>
+				</property>
+				<property>
+					<name>mapred.mapoutput.value.class</name>
+					<value>org.apache.hadoop.io.IntWritable</value>
+				</property>
+				<property>
+					<name>mapred.output.key.class</name>
+					<value>org.apache.hadoop.io.Text</value>
+				</property>
+				<property>
+					<name>mapred.output.value.class</name>
+					<value>org.apache.hadoop.io.DoubleWritable</value>
+				</property>
+				<property>
+					<name>mapred.input.dir</name>
+					<value>/user/hadoop/${projectRoot}/input-data</value>
+				</property>
+				<property>
+					<name>mapred.output.dir</name>
+					<value>/user/${user}/${projectRoot}/output-data/${topAirlinesByScheduleOutput}</value>
+				</property>
+			</configuration>
+		</map-reduce>
+		<ok to="top_airports_based_on_taxi_time"/>
+		<error to="fail"/>
+	</action>
+
 	<action name="top_airports_based_on_taxi_time">
 		<map-reduce>
 			<resource-manager>${resourceManager}</resource-manager>
