@@ -23,18 +23,16 @@ import java.io.IOException;
                     if (cancelled != 1) {
                         arrival_time = Integer.parseInt(rawData[6]);
                         CRSArrival_time = Integer.parseInt(rawData[7]);
-                        carrier = rawData[8];
+                        carrier = rawData[8].replaceAll("\"", "").trim();
+                        if(carrier.trim().length() > 0) {
+                            if (arrival_time < CRSArrival_time || (arrival_time - CRSArrival_time) < possible_delay) {
+                                context.write(new Text(carrier), new IntWritable(1));
+                            }
+                            context.write(new Text(carrier), new IntWritable(0));
+                        }
                     }
                 }
-
-                if (arrival_time < CRSArrival_time || (arrival_time - CRSArrival_time) < possible_delay) {
-                    context.write(new Text(carrier), new IntWritable(1));
-                }
-
-                context.write(new Text(carrier), new IntWritable(0));
-
             }catch (Exception e){
-                System.out.println(e);
             }
 
         }
